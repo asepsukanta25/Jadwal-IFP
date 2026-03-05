@@ -119,7 +119,10 @@ export default function App() {
         } else if (payload.eventType === 'UPDATE') {
           setBookings(prev => prev.map(b => b.id === payload.new.id ? payload.new as Booking : b));
         } else if (payload.eventType === 'DELETE') {
-          setBookings(prev => prev.filter(b => b.id !== payload.old.id));
+          const deletedId = payload.old?.id;
+          if (deletedId) {
+            setBookings(prev => prev.filter(b => b.id !== deletedId));
+          }
         }
       })
       .subscribe();
@@ -137,7 +140,10 @@ export default function App() {
             return prev.map(r => r.id === payload.new.id ? payload.new as NegoRequest : r);
           });
         } else if (payload.eventType === 'DELETE') {
-          setNegoRequests(prev => prev.filter(r => r.id !== payload.old.id));
+          const deletedId = payload.old?.id;
+          if (deletedId) {
+            setNegoRequests(prev => prev.filter(r => r.id !== deletedId));
+          }
         }
       })
       .subscribe();
@@ -203,26 +209,61 @@ export default function App() {
   };
 
   const handleCancelBooking = async (bookingId: string) => {
+    if (!isSupabaseConfigured) {
+      alert('Database belum dikonfigurasi. Silakan atur di panel Secrets.');
+      return;
+    }
+
     if (!window.confirm('Apakah Anda yakin ingin membatalkan booking ini?')) return;
+    
     try {
-      const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
+      setLoading(true);
+      const { error, count } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId);
+      
       if (error) throw error;
+      
+      // Update local state immediately for better UX
       setBookings(prev => prev.filter(b => b.id !== bookingId));
-    } catch (err) {
+      
+      // Also clean up any related negotiations locally
+      setNegoRequests(prev => prev.filter(r => r.booking_id !== bookingId));
+      
+      alert('Booking berhasil dibatalkan.');
+    } catch (err: any) {
       console.error('Cancel booking error:', err);
-      alert('Gagal membatalkan booking.');
+      alert(`Gagal membatalkan booking: ${err.message || 'Error tidak diketahui'}`);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCancelNego = async (negoId: string) => {
+    if (!isSupabaseConfigured) {
+      alert('Database belum dikonfigurasi.');
+      return;
+    }
+
     if (!window.confirm('Apakah Anda yakin ingin membatalkan permintaan negosiasi ini?')) return;
+    
     try {
-      const { error } = await supabase.from('negotiations').delete().eq('id', negoId);
+      setLoading(true);
+      const { error } = await supabase
+        .from('negotiations')
+        .delete()
+        .eq('id', negoId);
+      
       if (error) throw error;
+      
       setNegoRequests(prev => prev.filter(r => r.id !== negoId));
-    } catch (err) {
+      alert('Permintaan negosiasi berhasil dibatalkan.');
+    } catch (err: any) {
       console.error('Cancel nego error:', err);
-      alert('Gagal membatalkan negosiasi.');
+      alert(`Gagal membatalkan negosiasi: ${err.message || 'Error tidak diketahui'}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -550,10 +591,13 @@ export default function App() {
 
                                 {/* Action Overlay */}
                                 <div className="absolute inset-0 bg-indigo-600/90 opacity-0 group-hover/card:opacity-100 rounded-2xl flex flex-col items-center justify-center text-white transition-opacity duration-200 gap-2">
-                                  {isMe && slotBooking && slotBooking.type !== 'default' ? (
+                                  {loading ? (
+                                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                                  ) : isMe && slotBooking && slotBooking.type !== 'default' ? (
                                     <button 
                                       onClick={() => handleCancelBooking(slotBooking.id!)}
-                                      className="flex flex-col items-center justify-center hover:scale-110 transition-transform"
+                                      disabled={loading}
+                                      className="flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
                                     >
                                       <Trash2 className="w-6 h-6 mb-1" />
                                       <span className="text-[10px] font-bold uppercase tracking-wider">Batal Booking</span>
@@ -561,7 +605,8 @@ export default function App() {
                                   ) : !isMe && myPendingNego ? (
                                     <button 
                                       onClick={() => handleCancelNego(myPendingNego.id!)}
-                                      className="flex flex-col items-center justify-center hover:scale-110 transition-transform"
+                                      disabled={loading}
+                                      className="flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
                                     >
                                       <XCircle className="w-6 h-6 mb-1" />
                                       <span className="text-[10px] font-bold uppercase tracking-wider">Batal Nego</span>
@@ -572,7 +617,8 @@ export default function App() {
                                         setSelectedSlot({ week: weekIdx, day: dayIdx });
                                         setShowNegoModal(true);
                                       }}
-                                      className="flex flex-col items-center justify-center hover:scale-110 transition-transform"
+                                      disabled={loading}
+                                      className="flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
                                     >
                                       <ArrowRightLeft className="w-6 h-6 mb-1" />
                                       <span className="text-[10px] font-bold uppercase tracking-wider">Nego Jadwal</span>
