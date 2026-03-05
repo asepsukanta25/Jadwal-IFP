@@ -1,0 +1,5 @@
+{
+  "name": "IFP Scheduler",
+  "description": "Aplikasi jadwal penggunaan Interactive Flat Panel (IFP) dengan fitur booking dan negosiasi antar guru.",
+  "requestFramePermissions": []
+}
