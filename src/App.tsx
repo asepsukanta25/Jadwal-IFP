@@ -53,6 +53,9 @@ const DEFAULT_SCHEDULE: Record<number, Record<number, string | null>> = {
 export default function App() {
   const [currentTeacher, setCurrentTeacher] = useState<Teacher | null>(null);
   const [accessCode, setAccessCode] = useState('');
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ type: string; data: any } | null>(null);
+  
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [negoRequests, setNegoRequests] = useState<NegoRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,9 +163,24 @@ export default function App() {
     if (teacher) {
       setCurrentTeacher(teacher);
       setAccessCode('');
-      setError(null);
+      setShowLoginModal(false);
+      
+      // Execute pending action if any
+      if (pendingAction) {
+        const { type, data } = pendingAction;
+        if (type === 'accept') handleAcceptNego(data, teacher);
+        if (type === 'reject') handleRejectNego(data, teacher);
+        if (type === 'booking') handleBooking(data.week, data.day, teacher);
+        if (type === 'nego_request') {
+          setSelectedSlot(data);
+          setShowNegoModal(true);
+        }
+        if (type === 'cancel_booking') handleCancelBooking(data, teacher);
+        if (type === 'cancel_nego') handleCancelNego(data, teacher);
+        setPendingAction(null);
+      }
     } else {
-      setError('Kode akses salah. Silakan coba lagi.');
+      alert('Kode akses salah.');
     }
   };
 
@@ -170,118 +188,138 @@ export default function App() {
     setCurrentTeacher(null);
   };
 
-  const getSlotOwner = (week: number, day: number) => {
-    // Check if there's a custom booking first
-    const customBooking = bookings.find(b => b.week_index === week && b.day_index === day);
-    if (customBooking) {
-      return TEACHERS.find(t => t.id === customBooking.teacher_id);
+  const handleActionWithAuth = (type: string, data: any) => {
+    if (!currentTeacher) {
+      setPendingAction({ type, data });
+      setShowLoginModal(true);
+      return;
     }
-
-    // Otherwise use default
-    const defaultId = DEFAULT_SCHEDULE[week][day];
-    if (defaultId) {
-      return TEACHERS.find(t => t.id === defaultId);
+    
+    if (type === 'accept') handleAcceptNego(data, currentTeacher);
+    if (type === 'reject') handleRejectNego(data, currentTeacher);
+    if (type === 'booking') handleBooking(data.week, data.day, currentTeacher);
+    if (type === 'nego_request') {
+      setSelectedSlot(data);
+      setShowNegoModal(true);
     }
-
-    return null;
+    if (type === 'cancel_booking') handleCancelBooking(data, currentTeacher);
+    if (type === 'cancel_nego') handleCancelNego(data, currentTeacher);
   };
 
-  const handleBooking = async (week: number, day: number) => {
-    if (!currentTeacher) return;
-
+  const handleBooking = async (week: number, day: number, teacher: Teacher) => {
     try {
       const newBooking: Booking = {
         week_index: week,
         day_index: day,
-        teacher_id: currentTeacher.id,
+        teacher_id: teacher.id,
         type: 'booked',
         status: 'confirmed'
       };
-
       const { error } = await supabase.from('bookings').insert([newBooking]);
       if (error) throw error;
-      
       setSelectedSlot(null);
     } catch (err) {
       console.error('Booking error:', err);
-      alert('Gagal melakukan booking. Pastikan koneksi Supabase sudah benar.');
+      alert('Gagal melakukan booking.');
     }
   };
 
-  const handleCancelBooking = async (bookingId: string) => {
-    if (!isSupabaseConfigured) {
-      alert('Database belum dikonfigurasi. Silakan atur di panel Secrets.');
+  const handleCancelBooking = async (bookingId: string, teacher: Teacher) => {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (booking?.teacher_id !== teacher.id) {
+      alert('Anda hanya bisa membatalkan booking milik sendiri.');
       return;
     }
-
     if (!window.confirm('Apakah Anda yakin ingin membatalkan booking ini?')) return;
-    
     try {
       setLoading(true);
-      const { error, count } = await supabase
-        .from('bookings')
-        .delete()
-        .eq('id', bookingId);
-      
+      const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
       if (error) throw error;
-      
-      // Update local state immediately for better UX
       setBookings(prev => prev.filter(b => b.id !== bookingId));
-      
-      // Also clean up any related negotiations locally
       setNegoRequests(prev => prev.filter(r => r.booking_id !== bookingId));
-      
-      alert('Booking berhasil dibatalkan.');
     } catch (err: any) {
-      console.error('Cancel booking error:', err);
-      alert(`Gagal membatalkan booking: ${err.message || 'Error tidak diketahui'}`);
+      alert(`Gagal membatalkan booking: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancelNego = async (negoId: string) => {
-    if (!isSupabaseConfigured) {
-      alert('Database belum dikonfigurasi.');
+  const handleCancelNego = async (negoId: string, teacher: Teacher) => {
+    const nego = negoRequests.find(r => r.id === negoId);
+    if (nego?.from_teacher_id !== teacher.id) {
+      alert('Anda hanya bisa membatalkan negosiasi milik sendiri.');
       return;
     }
-
     if (!window.confirm('Apakah Anda yakin ingin membatalkan permintaan negosiasi ini?')) return;
-    
     try {
       setLoading(true);
-      const { error } = await supabase
-        .from('negotiations')
-        .delete()
-        .eq('id', negoId);
-      
+      const { error } = await supabase.from('negotiations').delete().eq('id', negoId);
       if (error) throw error;
-      
       setNegoRequests(prev => prev.filter(r => r.id !== negoId));
-      alert('Permintaan negosiasi berhasil dibatalkan.');
     } catch (err: any) {
-      console.error('Cancel nego error:', err);
-      alert(`Gagal membatalkan negosiasi: ${err.message || 'Error tidak diketahui'}`);
+      alert(`Gagal membatalkan negosiasi: ${err.message}`);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAcceptNego = async (req: NegoRequest, teacher: Teacher) => {
+    if (req.to_teacher_id !== teacher.id) {
+      alert('Anda hanya bisa menerima negosiasi untuk jadwal Anda sendiri.');
+      return;
+    }
+    try {
+      await supabase.from('negotiations').update({ status: 'accepted' }).eq('id', req.id);
+      const { data: booking } = await supabase.from('bookings').select('*').eq('id', req.booking_id).single();
+      if (booking) {
+        await supabase.from('bookings').update({ 
+          teacher_id: req.from_teacher_id,
+          original_teacher_id: req.to_teacher_id,
+          type: 'negotiated'
+        }).eq('id', req.booking_id);
+      }
+      setNegoRequests(prev => prev.filter(r => r.id !== req.id));
+    } catch (err) {
+      console.error('Accept error:', err);
+    }
+  };
+
+  const handleRejectNego = async (req: NegoRequest, teacher: Teacher) => {
+    if (req.to_teacher_id !== teacher.id) {
+      alert('Anda hanya bisa menolak negosiasi untuk jadwal Anda sendiri.');
+      return;
+    }
+    try {
+      await supabase.from('negotiations').update({ status: 'rejected' }).eq('id', req.id);
+      setNegoRequests(prev => prev.filter(r => r.id !== req.id));
+    } catch (err) {
+      console.error('Reject error:', err);
+    }
+  };
+
+  const getSlotOwner = (week: number, day: number) => {
+    const customBooking = bookings.find(b => b.week_index === week && b.day_index === day);
+    if (customBooking) {
+      return TEACHERS.find(t => t.id === customBooking.teacher_id);
+    }
+    const defaultId = DEFAULT_SCHEDULE[week][day];
+    if (defaultId) {
+      return TEACHERS.find(t => t.id === defaultId);
+    }
+    return null;
   };
 
   const handleNegoRequest = async () => {
     if (!currentTeacher || !selectedSlot) return;
-
     const owner = getSlotOwner(selectedSlot.week, selectedSlot.day);
     if (!owner) return;
 
     try {
-      // Find or create booking record for this slot if it's default
       let bookingId: string;
       const existingBooking = bookings.find(b => b.week_index === selectedSlot.week && b.day_index === selectedSlot.day);
-      
       if (existingBooking) {
         bookingId = existingBooking.id!;
       } else {
-        // Create a placeholder booking for default slot to link nego
         const { data, error } = await supabase.from('bookings').insert([{
           week_index: selectedSlot.week,
           day_index: selectedSlot.day,
@@ -300,121 +338,15 @@ export default function App() {
         status: 'pending',
         message: negoMessage
       }]);
-
       if (error) throw error;
-
       setShowNegoModal(false);
       setNegoMessage('');
       setSelectedSlot(null);
       alert('Permintaan negosiasi telah dikirim!');
     } catch (err) {
-      console.error('Nego error:', err);
       alert('Gagal mengirim negosiasi.');
     }
   };
-
-  const handleAcceptNego = async (req: NegoRequest) => {
-    try {
-      // Update negotiation status
-      await supabase.from('negotiations').update({ status: 'accepted' }).eq('id', req.id);
-      
-      // Update booking to the new teacher
-      const { data: booking } = await supabase.from('bookings').select('*').eq('id', req.booking_id).single();
-      
-      if (booking) {
-        await supabase.from('bookings').update({ 
-          teacher_id: req.from_teacher_id,
-          original_teacher_id: req.to_teacher_id,
-          type: 'negotiated'
-        }).eq('id', req.booking_id);
-      }
-
-      setNegoRequests(prev => prev.filter(r => r.id !== req.id));
-    } catch (err) {
-      console.error('Accept error:', err);
-    }
-  };
-
-  const handleRejectNego = async (req: NegoRequest) => {
-    try {
-      await supabase.from('negotiations').update({ status: 'rejected' }).eq('id', req.id);
-      setNegoRequests(prev => prev.filter(r => r.id !== req.id));
-    } catch (err) {
-      console.error('Reject error:', err);
-    }
-  };
-
-  if (!currentTeacher) {
-    return (
-      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4 font-sans">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border border-gray-100"
-        >
-          <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-indigo-200">
-              <Calendar className="text-white w-8 h-8" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">IFP Scheduler</h1>
-            <p className="text-gray-500 text-sm mt-1">Sistem Jadwal Penggunaan IFP</p>
-          </div>
-
-          {!isSupabaseConfigured && (
-            <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">Konfigurasi Diperlukan</p>
-                <p className="text-xs text-amber-700 leading-relaxed">
-                  Silakan atur <strong>VITE_SUPABASE_URL</strong> dan <strong>VITE_SUPABASE_ANON_KEY</strong> di panel Secrets untuk mengaktifkan fitur database.
-                </p>
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 ml-1">
-                Kode Akses Guru (3 Digit)
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input 
-                  type="password"
-                  maxLength={3}
-                  value={accessCode}
-                  onChange={(e) => setAccessCode(e.target.value)}
-                  placeholder="Masukkan 3 digit kode..."
-                  className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-12 pr-4 text-lg font-mono focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
-                  required
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="flex items-center gap-2 text-red-500 bg-red-50 p-3 rounded-xl text-sm">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <p>{error}</p>
-              </div>
-            )}
-
-            <button 
-              type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-100 transition-all active:scale-[0.98]"
-            >
-              Masuk ke Aplikasi
-            </button>
-          </form>
-
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <p className="text-xs text-center text-gray-400 leading-relaxed">
-              Gunakan kode unik Anda untuk melakukan booking atau negosiasi jadwal.
-            </p>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans">
@@ -432,25 +364,50 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col items-end">
-              <span className="text-sm font-semibold text-gray-900">{currentTeacher.name}</span>
-              <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest">Teacher Active</span>
-            </div>
-            <button 
-              onClick={handleLogout}
-              className="p-2.5 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl transition-colors"
-              title="Keluar"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
+            {currentTeacher ? (
+              <>
+                <div className="hidden md:flex flex-col items-end">
+                  <span className="text-sm font-semibold text-gray-900">{currentTeacher.name}</span>
+                  <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest">Teacher Active</span>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  className="p-2.5 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl transition-colors"
+                  title="Keluar"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </>
+            ) : (
+              <button 
+                onClick={() => setShowLoginModal(true)}
+                className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2"
+              >
+                <Lock className="w-4 h-4" />
+                <span>Login Guru</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Configuration Warning */}
+        {!isSupabaseConfigured && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-3 max-w-2xl mx-auto">
+            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">Konfigurasi Diperlukan</p>
+              <p className="text-xs text-amber-700 leading-relaxed">
+                Silakan atur <strong>VITE_SUPABASE_URL</strong> dan <strong>VITE_SUPABASE_ANON_KEY</strong> di panel Secrets untuk mengaktifkan fitur database.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Notifications for Nego Requests */}
         <AnimatePresence>
-          {negoRequests.filter(r => r.to_teacher_id === currentTeacher.id).map(req => {
+          {currentTeacher && negoRequests.filter(r => r.to_teacher_id === currentTeacher.id).map(req => {
             const fromTeacher = TEACHERS.find(t => t.id === req.from_teacher_id);
             return (
               <motion.div 
@@ -473,13 +430,13 @@ export default function App() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
-                    onClick={() => handleAcceptNego(req)}
+                    onClick={() => handleActionWithAuth('accept', req)}
                     className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors"
                   >
                     Terima
                   </button>
                   <button 
-                    onClick={() => handleRejectNego(req)}
+                    onClick={() => handleActionWithAuth('reject', req)}
                     className="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-200 transition-colors"
                   >
                     Tolak
@@ -521,11 +478,11 @@ export default function App() {
                       const slotDate = getSlotDate(weekIdx, dayIdx);
                       const isToday = isSameDay(slotDate, today);
                       const owner = getSlotOwner(weekIdx, dayIdx);
-                      const isMe = owner?.id === currentTeacher.id;
+                      const isMe = currentTeacher && owner?.id === currentTeacher.id;
                       
                       const slotBooking = bookings.find(b => b.week_index === weekIdx && b.day_index === dayIdx);
                       const isNegotiated = slotBooking?.type === 'negotiated';
-                      const myPendingNego = slotBooking ? negoRequests.find(r => r.booking_id === slotBooking.id && r.from_teacher_id === currentTeacher.id) : null;
+                      const myPendingNego = currentTeacher && slotBooking ? negoRequests.find(r => r.booking_id === slotBooking.id && r.from_teacher_id === currentTeacher.id) : null;
 
                       return (
                         <td key={dayIdx} className={cn(
@@ -595,7 +552,7 @@ export default function App() {
                                     <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
                                   ) : isMe && slotBooking && slotBooking.type !== 'default' ? (
                                     <button 
-                                      onClick={() => handleCancelBooking(slotBooking.id!)}
+                                      onClick={() => handleActionWithAuth('cancel_booking', slotBooking.id!)}
                                       disabled={loading}
                                       className="flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
                                     >
@@ -604,7 +561,7 @@ export default function App() {
                                     </button>
                                   ) : !isMe && myPendingNego ? (
                                     <button 
-                                      onClick={() => handleCancelNego(myPendingNego.id!)}
+                                      onClick={() => handleActionWithAuth('cancel_nego', myPendingNego.id!)}
                                       disabled={loading}
                                       className="flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
                                     >
@@ -613,10 +570,7 @@ export default function App() {
                                     </button>
                                   ) : !isMe ? (
                                     <button 
-                                      onClick={() => {
-                                        setSelectedSlot({ week: weekIdx, day: dayIdx });
-                                        setShowNegoModal(true);
-                                      }}
+                                      onClick={() => handleActionWithAuth('nego_request', { week: weekIdx, day: dayIdx })}
                                       disabled={loading}
                                       className="flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
                                     >
@@ -628,7 +582,7 @@ export default function App() {
                               </div>
                             ) : (
                               <button 
-                                onClick={() => handleBooking(weekIdx, dayIdx)}
+                                onClick={() => handleActionWithAuth('booking', { week: weekIdx, day: dayIdx })}
                                 className="w-full h-[100px] border-2 border-dashed border-gray-100 rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all group/btn"
                               >
                                 <div className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center group-hover/btn:bg-indigo-100 transition-colors">
@@ -729,6 +683,78 @@ export default function App() {
                   </button>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Login Modal */}
+      <AnimatePresence>
+        {showLoginModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setShowLoginModal(false);
+                setPendingAction(null);
+              }}
+              className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[32px] shadow-2xl p-8 overflow-hidden"
+            >
+              <div className="flex flex-col items-center mb-8">
+                <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-indigo-200">
+                  <Lock className="text-white w-8 h-8" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-900">Verifikasi Guru</h1>
+                <p className="text-gray-500 text-sm mt-1">Masukkan kode akses Anda untuk melanjutkan</p>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-6">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 ml-1">
+                    Kode Akses Guru (3 Digit)
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input 
+                      type="password"
+                      maxLength={3}
+                      value={accessCode}
+                      onChange={(e) => setAccessCode(e.target.value)}
+                      placeholder="Masukkan 3 digit kode..."
+                      className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-12 pr-4 text-lg font-mono focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setShowLoginModal(false);
+                      setPendingAction(null);
+                    }}
+                    className="flex-1 px-6 py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl hover:bg-gray-200 transition-all"
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    type="submit"
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-100 transition-all active:scale-[0.98]"
+                  >
+                    Verifikasi
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}
