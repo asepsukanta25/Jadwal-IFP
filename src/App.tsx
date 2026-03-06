@@ -349,57 +349,93 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] font-sans">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-md">
-              <Calendar className="text-white w-5 h-5" />
+    <div className="min-h-screen font-sans selection:bg-brand-100 selection:text-brand-900">
+      {/* Navigation */}
+      <nav className="sticky top-0 z-40 w-full glass border-b border-slate-200/60 transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center gap-3 group cursor-pointer">
+              <div className="w-12 h-12 bg-brand-600 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-200 group-hover:scale-110 transition-transform duration-300">
+                <CalendarDays className="text-white w-7 h-7" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold tracking-tight text-slate-900 group-hover:text-brand-600 transition-colors">IFP Scheduler</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] leading-none">SD NEGERI LEUWIGAJAH 3</span>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 leading-tight">IFP Scheduler</h1>
-              <p className="text-xs text-gray-500">Jadwal Siklus 3 Minggu</p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-4">
-            {currentTeacher ? (
-              <>
-                <div className="hidden md:flex flex-col items-end">
-                  <span className="text-sm font-semibold text-gray-900">{currentTeacher.name}</span>
-                  <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest">Teacher Active</span>
+            <div className="flex items-center gap-4">
+              {currentTeacher ? (
+                <div className="flex items-center gap-4">
+                  <div className="hidden md:flex flex-col items-end">
+                    <span className="text-sm font-bold text-slate-900">{currentTeacher.name}</span>
+                    <span className="text-[10px] font-bold text-brand-600 uppercase tracking-wider">Guru Terverifikasi</span>
+                  </div>
+                  <div className="w-10 h-10 bg-brand-50 border border-brand-100 rounded-xl flex items-center justify-center text-brand-600 shadow-sm">
+                    <User className="w-5 h-5" />
+                  </div>
+                  <button 
+                    onClick={handleLogout}
+                    className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200"
+                    title="Logout"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
                 </div>
+              ) : (
                 <button 
-                  onClick={handleLogout}
-                  className="p-2.5 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl transition-colors"
-                  title="Keluar"
+                  onClick={() => setShowLoginModal(true)}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-brand-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-brand-200 hover:bg-brand-700 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
                 >
-                  <LogOut className="w-5 h-5" />
+                  <Lock className="w-4 h-4" />
+                  <span>Login Guru</span>
                 </button>
-              </>
-            ) : (
-              <button 
-                onClick={() => setShowLoginModal(true)}
-                className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2"
-              >
-                <Lock className="w-4 h-4" />
-                <span>Login Guru</span>
-              </button>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Configuration Warning */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* Hero Section */}
+        <div className="mb-12 text-center md:text-left">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-700 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4 border border-brand-100"
+          >
+            <div className="w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse"></div>
+            Sistem Penjadwalan IFP v2.0
+          </motion.div>
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-4"
+          >
+            JADWAL PENGGUNAAN IFP <span className="text-brand-600">SD NEGERI LEUWIGAJAH 3</span>
+          </motion.h2>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-slate-500 max-w-2xl text-lg leading-relaxed"
+          >
+            Pantau dan atur penggunaan Interactive Flat Panel (IFP) dengan mudah. 
+            Pastikan setiap kelas mendapatkan kesempatan belajar yang sama.
+          </motion.p>
+        </div>
+
+        {/* Supabase Config Warning */}
         {!isSupabaseConfigured && (
-          <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-3 max-w-2xl mx-auto">
-            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="mb-10 bg-amber-50 border border-amber-200 rounded-3xl p-6 flex items-start gap-4 shadow-sm">
+            <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="text-amber-600 w-6 h-6" />
+            </div>
             <div>
-              <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">Konfigurasi Diperlukan</p>
-              <p className="text-xs text-amber-700 leading-relaxed">
-                Silakan atur <strong>VITE_SUPABASE_URL</strong> dan <strong>VITE_SUPABASE_ANON_KEY</strong> di panel Secrets untuk mengaktifkan fitur database.
+              <p className="text-sm font-bold text-amber-900 uppercase tracking-wider mb-1">Konfigurasi Database Diperlukan</p>
+              <p className="text-sm text-amber-700 leading-relaxed">
+                Silakan hubungi administrator untuk mengatur <strong>VITE_SUPABASE_URL</strong> dan <strong>VITE_SUPABASE_ANON_KEY</strong>.
               </p>
             </div>
           </div>
@@ -448,177 +484,184 @@ export default function App() {
         </AnimatePresence>
 
         {/* Schedule Grid */}
-        <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-50/50">
-                  <th className="p-6 text-left text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] border-b border-gray-100">Minggu</th>
-                  {DAYS.map((day, idx) => (
-                    <th key={day} className="p-6 text-left border-b border-gray-100">
-                      <div className="flex flex-col">
-                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em]">{day}</span>
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {WEEKS.map((weekLabel, weekIdx) => (
-                  <tr key={weekIdx} className="group hover:bg-gray-50/30 transition-colors">
-                    <td className="p-6 border-b border-gray-100">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-gray-900">{weekLabel}</span>
-                        <span className="text-[10px] text-gray-400 font-medium mt-1">
-                          {format(getSlotDate(weekIdx, 0), 'd MMM', { locale: id })} - {format(getSlotDate(weekIdx, 4), 'd MMM', { locale: id })}
-                        </span>
-                      </div>
-                    </td>
-                    {DAYS.map((_, dayIdx) => {
-                      const slotDate = getSlotDate(weekIdx, dayIdx);
-                      const isToday = isSameDay(slotDate, today);
-                      const owner = getSlotOwner(weekIdx, dayIdx);
-                      const isMe = currentTeacher && owner?.id === currentTeacher.id;
-                      
-                      const slotBooking = bookings.find(b => b.week_index === weekIdx && b.day_index === dayIdx);
-                      const isNegotiated = slotBooking?.type === 'negotiated';
-                      const myPendingNego = currentTeacher && slotBooking ? negoRequests.find(r => r.booking_id === slotBooking.id && r.from_teacher_id === currentTeacher.id) : null;
+        <div className="space-y-12">
+          {WEEKS.map((weekLabel, weekIdx) => (
+            <div key={weekIdx} className="space-y-6">
+              <div className="flex items-end justify-between px-2">
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{weekLabel}</h3>
+                  <p className="text-sm text-slate-400 font-medium">
+                    {format(getSlotDate(weekIdx, 0), 'd MMMM', { locale: id })} — {format(getSlotDate(weekIdx, 4), 'd MMMM yyyy', { locale: id })}
+                  </p>
+                </div>
+                <div className="hidden md:block h-px flex-1 bg-slate-100 mx-8 mb-2"></div>
+                <div className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] mb-1">
+                  Week {weekIdx + 1} Cycle
+                </div>
+              </div>
 
-                      return (
-                        <td key={dayIdx} className={cn(
-                          "p-4 border-b border-gray-100 transition-colors",
-                          isToday && "bg-indigo-50/50"
-                        )}>
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between px-1">
-                              <span className={cn(
-                                "text-[10px] font-bold",
-                                isToday ? "text-indigo-600" : "text-gray-400"
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                {DAYS.map((dayName, dayIdx) => {
+                  const slotDate = getSlotDate(weekIdx, dayIdx);
+                  const isToday = isSameDay(slotDate, today);
+                  const owner = getSlotOwner(weekIdx, dayIdx);
+                  const isMe = currentTeacher && owner?.id === currentTeacher.id;
+                  
+                  const slotBooking = bookings.find(b => b.week_index === weekIdx && b.day_index === dayIdx);
+                  const isNegotiated = slotBooking?.type === 'negotiated';
+                  const myPendingNego = currentTeacher && slotBooking ? negoRequests.find(r => r.booking_id === slotBooking.id && r.from_teacher_id === currentTeacher.id) : null;
+
+                  return (
+                    <motion.div 
+                      key={dayIdx}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: (weekIdx * 5 + dayIdx) * 0.03 }}
+                      className={cn(
+                        "relative group flex flex-col min-h-[220px] rounded-[32px] p-6 transition-all duration-500",
+                        isToday ? "ring-2 ring-brand-500 ring-offset-4" : "border border-slate-100 bg-white/50 backdrop-blur-sm hover:bg-white hover:shadow-2xl hover:shadow-brand-100/50"
+                      )}
+                    >
+                      {/* Date Header */}
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex flex-col">
+                          <span className={cn(
+                            "text-[10px] font-bold uppercase tracking-widest",
+                            isToday ? "text-brand-600" : "text-slate-400"
+                          )}>
+                            {dayName}
+                          </span>
+                          <span className={cn(
+                            "text-lg font-bold tracking-tight",
+                            isToday ? "text-slate-900" : "text-slate-700"
+                          )}>
+                            {format(slotDate, 'd MMM', { locale: id })}
+                          </span>
+                        </div>
+                        {isToday && (
+                          <div className="px-2 py-1 bg-brand-600 text-white text-[8px] font-bold uppercase tracking-widest rounded-lg shadow-lg shadow-brand-200">
+                            Today
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 flex flex-col">
+                        {owner ? (
+                          <div className="flex flex-col h-full">
+                            <div className="flex items-start justify-between mb-4">
+                              <div className={cn(
+                                "w-10 h-10 rounded-2xl flex items-center justify-center shadow-inner transition-colors duration-300",
+                                isMe ? "bg-brand-600 text-white" : "bg-slate-50 text-slate-400 group-hover:bg-brand-50 group-hover:text-brand-500"
                               )}>
-                                {format(slotDate, 'd MMM', { locale: id })}
-                              </span>
-                              {isToday && (
-                                <div className="flex items-center gap-1">
-                                  <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-pulse"></div>
-                                  <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-tighter">Hari Ini</span>
+                                <User className="w-5 h-5" />
+                              </div>
+                              <div className="flex flex-col gap-1 items-end">
+                                {isNegotiated && (
+                                  <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-bold uppercase tracking-widest rounded-full">
+                                    Nego
+                                  </span>
+                                )}
+                                {myPendingNego && (
+                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[8px] font-bold uppercase tracking-widest rounded-full">
+                                    Pending
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="mt-auto">
+                              <p className={cn(
+                                "text-sm font-bold tracking-tight line-clamp-1",
+                                isMe ? "text-brand-700" : "text-slate-900"
+                              )}>
+                                {owner.name}
+                              </p>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                                {owner.isClassTeacher ? 'Wali Kelas' : 'Guru Mapel'}
+                              </p>
+                            </div>
+
+                            {/* Action Overlay */}
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-slate-900/90 backdrop-blur-sm rounded-[32px] flex flex-col items-center justify-center p-6 text-center">
+                              <div className="mb-4">
+                                <p className="text-white font-bold text-sm mb-1">{owner.name}</p>
+                                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                                  {owner.isClassTeacher ? 'Wali Kelas' : 'Guru Mapel'}
+                                </p>
+                              </div>
+                              
+                              {loading ? (
+                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-brand-500 border-t-transparent"></div>
+                              ) : isMe && slotBooking && slotBooking.type !== 'default' ? (
+                                <button 
+                                  onClick={() => handleActionWithAuth('cancel_booking', slotBooking.id!)}
+                                  className="w-full py-3 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Batal Booking
+                                </button>
+                              ) : !isMe && myPendingNego ? (
+                                <button 
+                                  onClick={() => handleActionWithAuth('cancel_nego', myPendingNego.id!)}
+                                  className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                  Batal Nego
+                                </button>
+                              ) : !isMe ? (
+                                <button 
+                                  onClick={() => handleActionWithAuth('nego_request', { week: weekIdx, day: dayIdx })}
+                                  className="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-brand-900/20"
+                                >
+                                  <ArrowRightLeft className="w-4 h-4" />
+                                  Nego Jadwal
+                                </button>
+                              ) : (
+                                <div className="p-3 bg-brand-500/20 rounded-2xl border border-brand-500/30">
+                                  <CheckCircle2 className="text-brand-400 w-6 h-6 mx-auto mb-1" />
+                                  <p className="text-[10px] text-brand-200 font-bold uppercase tracking-widest">Jadwal Anda</p>
                                 </div>
                               )}
                             </div>
-                            
-                            {owner ? (
-                              <div className={cn(
-                                "group/card relative p-4 rounded-2xl transition-all duration-300",
-                                isMe ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100" : "bg-white border border-gray-100 hover:border-indigo-200 hover:shadow-md"
-                              )}>
-                                <div className="flex items-start justify-between mb-2">
-                                  <div className={cn(
-                                    "w-8 h-8 rounded-lg flex items-center justify-center",
-                                    isMe ? "bg-white/20 text-white" : "bg-gray-100 text-gray-400"
-                                  )}>
-                                    <User className="w-4 h-4" />
-                                  </div>
-                                  <div className="flex gap-1">
-                                    {isNegotiated && (
-                                      <div className={cn(
-                                        "text-[9px] font-bold px-2 py-0.5 rounded-full uppercase",
-                                        isMe ? "bg-white/20 text-white" : "bg-amber-100 text-amber-700"
-                                      )}>
-                                        Nego
-                                      </div>
-                                    )}
-                                    {myPendingNego && (
-                                      <div className="bg-blue-100 text-blue-700 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">
-                                        Pending
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                <p className={cn(
-                                  "text-sm font-bold leading-tight mb-1",
-                                  isMe ? "text-white" : "text-gray-900"
-                                )}>
-                                  {owner.name}
-                                </p>
-                                <p className={cn(
-                                  "text-[10px] font-medium",
-                                  isMe ? "text-white/70" : "text-gray-400"
-                                )}>
-                                  {owner.isClassTeacher ? 'Wali Kelas' : 'Guru Mapel'}
-                                </p>
-
-                                {/* Action Overlay */}
-                                <div className="absolute inset-0 bg-indigo-600/90 opacity-0 group-hover/card:opacity-100 rounded-2xl flex flex-col items-center justify-center text-white transition-opacity duration-200 gap-2">
-                                  {loading ? (
-                                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
-                                  ) : isMe && slotBooking && slotBooking.type !== 'default' ? (
-                                    <button 
-                                      onClick={() => handleActionWithAuth('cancel_booking', slotBooking.id!)}
-                                      disabled={loading}
-                                      className="flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
-                                    >
-                                      <Trash2 className="w-6 h-6 mb-1" />
-                                      <span className="text-[10px] font-bold uppercase tracking-wider">Batal Booking</span>
-                                    </button>
-                                  ) : !isMe && myPendingNego ? (
-                                    <button 
-                                      onClick={() => handleActionWithAuth('cancel_nego', myPendingNego.id!)}
-                                      disabled={loading}
-                                      className="flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
-                                    >
-                                      <XCircle className="w-6 h-6 mb-1" />
-                                      <span className="text-[10px] font-bold uppercase tracking-wider">Batal Nego</span>
-                                    </button>
-                                  ) : !isMe ? (
-                                    <button 
-                                      onClick={() => handleActionWithAuth('nego_request', { week: weekIdx, day: dayIdx })}
-                                      disabled={loading}
-                                      className="flex flex-col items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
-                                    >
-                                      <ArrowRightLeft className="w-6 h-6 mb-1" />
-                                      <span className="text-[10px] font-bold uppercase tracking-wider">Nego Jadwal</span>
-                                    </button>
-                                  ) : null}
-                                </div>
-                              </div>
-                            ) : (
-                              <button 
-                                onClick={() => handleActionWithAuth('booking', { week: weekIdx, day: dayIdx })}
-                                className="w-full h-[100px] border-2 border-dashed border-gray-100 rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all group/btn"
-                              >
-                                <div className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center group-hover/btn:bg-indigo-100 transition-colors">
-                                  <Clock className="text-gray-300 group-hover/btn:text-indigo-500 w-4 h-4" />
-                                </div>
-                                <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest group-hover/btn:text-indigo-500">Booking</span>
-                              </button>
-                            )}
                           </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        ) : (
+                          <button 
+                            onClick={() => handleActionWithAuth('booking', { week: weekIdx, day: dayIdx })}
+                            className="flex-1 w-full border-2 border-dashed border-slate-100 rounded-2xl flex flex-col items-center justify-center gap-3 group/btn hover:border-brand-300 hover:bg-brand-50/50 transition-all duration-300"
+                          >
+                            <div className="w-10 h-10 bg-slate-50 rounded-2xl flex items-center justify-center group-hover/btn:bg-brand-100 group-hover/btn:scale-110 transition-all duration-300">
+                              <Clock className="text-slate-300 group-hover/btn:text-brand-600 w-5 h-5" />
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] group-hover/btn:text-brand-600">Booking Slot</span>
+                          </button>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Legend */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-indigo-600 rounded-full"></div>
-            <span className="text-xs text-gray-500 font-medium">Jadwal Anda</span>
+        <div className="mt-16 flex flex-wrap items-center justify-center gap-8 p-8 glass rounded-[32px] border border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 bg-brand-600 rounded-lg shadow-lg shadow-brand-100"></div>
+            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Jadwal Anda</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-white border border-gray-200 rounded-full"></div>
-            <span className="text-xs text-gray-500 font-medium">Jadwal Guru Lain</span>
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 bg-white border-2 border-slate-100 rounded-lg"></div>
+            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Guru Lain</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 border border-dashed border-gray-300 rounded-full"></div>
-            <span className="text-xs text-gray-500 font-medium">Slot Kosong</span>
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 border-2 border-dashed border-slate-200 rounded-lg"></div>
+            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Slot Kosong</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-amber-400 rounded-full"></div>
-            <span className="text-xs text-gray-500 font-medium">Hasil Negosiasi</span>
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 bg-amber-400 rounded-lg shadow-lg shadow-amber-100"></div>
+            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Hasil Nego</span>
           </div>
         </div>
       </main>
@@ -632,52 +675,52 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowNegoModal(false)}
-              className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[32px] shadow-2xl p-8 overflow-hidden"
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[40px] shadow-2xl p-10 overflow-hidden border border-slate-100"
             >
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center">
-                  <ArrowRightLeft className="text-amber-600 w-6 h-6" />
+              <div className="flex items-center gap-5 mb-8">
+                <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center shadow-inner">
+                  <ArrowRightLeft className="text-amber-600 w-7 h-7" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">Negosiasi Jadwal</h3>
-                  <p className="text-sm text-gray-500">Kirim pesan ke {getSlotOwner(selectedSlot.week, selectedSlot.day)?.name}</p>
+                  <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Negosiasi Jadwal</h3>
+                  <p className="text-sm text-slate-500">Kirim pesan ke <span className="font-bold text-slate-700">{getSlotOwner(selectedSlot.week, selectedSlot.day)?.name}</span></p>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Waktu Terpilih</span>
-                    <span className="text-xs font-bold text-indigo-600">{WEEKS[selectedSlot.week]}, {DAYS[selectedSlot.day]}</span>
+              <div className="space-y-6">
+                <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Waktu Terpilih</span>
+                    <span className="text-sm font-bold text-brand-600">{WEEKS[selectedSlot.week]}, {DAYS[selectedSlot.day]}</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Pesan (Opsional)</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Pesan Negosiasi</label>
                   <textarea 
                     value={negoMessage}
                     onChange={(e) => setNegoMessage(e.target.value)}
                     placeholder="Contoh: Boleh tukar jadwal? Saya ada keperluan mendesak..."
-                    className="w-full bg-gray-50 border-none rounded-2xl p-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-h-[100px] resize-none"
+                    className="w-full bg-slate-50 border-2 border-transparent rounded-3xl p-5 text-sm focus:border-brand-500 focus:bg-white transition-all outline-none min-h-[120px] resize-none"
                   />
                 </div>
 
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-4 pt-2">
                   <button 
                     onClick={() => setShowNegoModal(false)}
-                    className="flex-1 px-6 py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl hover:bg-gray-200 transition-all"
+                    className="flex-1 px-6 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all active:scale-95"
                   >
                     Batal
                   </button>
                   <button 
                     onClick={handleNegoRequest}
-                    className="flex-1 px-6 py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all"
+                    className="flex-1 px-6 py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all active:scale-95"
                   >
                     Kirim Nego
                   </button>
@@ -700,56 +743,56 @@ export default function App() {
                 setShowLoginModal(false);
                 setPendingAction(null);
               }}
-              className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[32px] shadow-2xl p-8 overflow-hidden"
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[40px] shadow-2xl p-10 overflow-hidden border border-slate-100"
             >
-              <div className="flex flex-col items-center mb-8">
-                <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-indigo-200">
-                  <Lock className="text-white w-8 h-8" />
+              <div className="flex flex-col items-center mb-10">
+                <div className="w-20 h-20 bg-brand-600 rounded-[32px] flex items-center justify-center mb-6 shadow-2xl shadow-brand-200 rotate-3 group-hover:rotate-0 transition-transform duration-500">
+                  <Lock className="text-white w-10 h-10" />
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900">Verifikasi Guru</h1>
-                <p className="text-gray-500 text-sm mt-1">Masukkan kode akses Anda untuk melanjutkan</p>
+                <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Verifikasi Guru</h1>
+                <p className="text-slate-500 text-sm mt-2 text-center">Masukkan 3 digit kode akses Anda untuk mengelola jadwal</p>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-6">
+              <form onSubmit={handleLogin} className="space-y-8">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 ml-1">
-                    Kode Akses Guru (3 Digit)
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4 ml-1 text-center">
+                    Kode Akses Guru
                   </label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <div className="relative group">
+                    <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-500 transition-colors w-6 h-6" />
                     <input 
                       type="password"
                       maxLength={3}
                       value={accessCode}
                       onChange={(e) => setAccessCode(e.target.value)}
-                      placeholder="Masukkan 3 digit kode..."
-                      className="w-full bg-gray-50 border-none rounded-2xl py-4 pl-12 pr-4 text-lg font-mono focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+                      placeholder="•••"
+                      className="w-full bg-slate-50 border-2 border-transparent rounded-3xl py-5 pl-16 pr-6 text-2xl font-mono tracking-[1em] focus:border-brand-500 focus:bg-white transition-all outline-none text-center"
                       required
                       autoFocus
                     />
                   </div>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-4">
                   <button 
                     type="button"
                     onClick={() => {
                       setShowLoginModal(false);
                       setPendingAction(null);
                     }}
-                    className="flex-1 px-6 py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl hover:bg-gray-200 transition-all"
+                    className="flex-1 px-6 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all active:scale-95"
                   >
                     Batal
                   </button>
                   <button 
                     type="submit"
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-100 transition-all active:scale-[0.98]"
+                    className="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-brand-200 transition-all active:scale-95"
                   >
                     Verifikasi
                   </button>
@@ -790,7 +833,7 @@ export default function App() {
           </div>
         </div>
         <div className="mt-12 pt-8 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">© 2024 IFP Scheduler System • SD Negeri Digital</p>
+          <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">© 2024 IFP Scheduler System • SD NEGERI LEUWIGAJAH 3</p>
           <div className="flex items-center gap-4">
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">System Operational</span>

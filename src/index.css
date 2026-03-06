@@ -1,11 +1,43 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-brand-50: #f5f7ff;
+  --color-brand-100: #ebf0fe;
+  --color-brand-200: #dae3fd;
+  --color-brand-300: #bccafb;
+  --color-brand-400: #93a6f7;
+  --color-brand-500: #6a7ef1;
+  --color-brand-600: #4f5be8;
+  --color-brand-700: #4149d6;
+  --color-brand-800: #383db0;
+  --color-brand-900: #31368c;
+  --color-brand-950: #212352;
 }
 
 body {
-  @apply bg-[#F8F9FA] text-gray-900;
+  @apply bg-[#FAFBFF] text-slate-900 antialiased;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(106, 126, 241, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(79, 91, 232, 0.05) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+.glass {
+  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-sm;
+}
+
+.glass-dark {
+  @apply bg-slate-900/90 backdrop-blur-md border border-slate-800/50 shadow-xl;
+}
+
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+}
+
+.grid-pattern {
+  background-size: 40px 40px;
+  background-image: radial-gradient(circle, #e2e8f0 1px, transparent 1px);
 }
