@@ -116,7 +116,7 @@ export default function App() {
     // Realtime subscription
     const bookingsChannel = supabase
       .channel('bookings-changes')
-      .on('postgres_changes', { event: '*', table: 'bookings' }, (payload) => {
+      .on('postgres_changes' as any, { event: '*', table: 'bookings' }, (payload: any) => {
         if (payload.eventType === 'INSERT') {
           setBookings(prev => [...prev, payload.new as Booking]);
         } else if (payload.eventType === 'UPDATE') {
@@ -132,7 +132,7 @@ export default function App() {
 
     const negoChannel = supabase
       .channel('nego-changes')
-      .on('postgres_changes', { event: '*', table: 'negotiations' }, (payload) => {
+      .on('postgres_changes' as any, { event: '*', table: 'negotiations' }, (payload: any) => {
         if (payload.eventType === 'INSERT') {
           setNegoRequests(prev => [...prev, payload.new as NegoRequest]);
         } else if (payload.eventType === 'UPDATE') {
