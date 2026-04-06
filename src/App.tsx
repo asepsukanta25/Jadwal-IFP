@@ -63,6 +63,7 @@ export default function App() {
   const [selectedSlot, setSelectedSlot] = useState<{ week: number; day: number } | null>(null);
   const [showNegoModal, setShowNegoModal] = useState(false);
   const [negoMessage, setNegoMessage] = useState('');
+  const [viewDate, setViewDate] = useState(new Date());
 
   // Date logic
   const today = useMemo(() => new Date(), []);
@@ -71,14 +72,18 @@ export default function App() {
   const REFERENCE_DATE = useMemo(() => new Date(2026, 2, 2), []); // March is index 2
   
   const currentCycleInfo = useMemo(() => {
-    const diffWeeks = differenceInWeeks(startOfWeek(today, { weekStartsOn: 1 }), startOfWeek(REFERENCE_DATE, { weekStartsOn: 1 }));
+    const diffWeeks = differenceInWeeks(startOfWeek(viewDate, { weekStartsOn: 1 }), startOfWeek(REFERENCE_DATE, { weekStartsOn: 1 }));
     const cycleIndex = ((diffWeeks % 3) + 3) % 3; // Ensure positive 0, 1, 2
     
-    // Calculate the start of the 3-week block that contains today
-    const blockStart = subWeeks(startOfWeek(today, { weekStartsOn: 1 }), cycleIndex);
+    // Calculate the start of the 3-week block that contains viewDate
+    const blockStart = subWeeks(startOfWeek(viewDate, { weekStartsOn: 1 }), cycleIndex);
     
     return { cycleIndex, blockStart };
-  }, [today, REFERENCE_DATE]);
+  }, [viewDate, REFERENCE_DATE]);
+
+  const handleNextCycle = () => setViewDate(prev => addWeeks(prev, 3));
+  const handlePrevCycle = () => setViewDate(prev => subWeeks(prev, 3));
+  const handleResetCycle = () => setViewDate(new Date());
 
   const getSlotDate = (weekIdx: number, dayIdx: number) => {
     return addDays(addWeeks(currentCycleInfo.blockStart, weekIdx), dayIdx);
@@ -440,6 +445,51 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* Cycle Navigation Panel */}
+        <div className="mb-10 glass border border-slate-200/60 rounded-[32px] p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-slate-200/20">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-brand-50 rounded-2xl flex items-center justify-center text-brand-600 shadow-inner">
+              <CalendarDays className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 tracking-tight">Navigasi Siklus</h3>
+              <p className="text-xs text-slate-500 font-medium">Lihat jadwal minggu ini atau minggu mendatang</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-slate-50/50 p-2 rounded-2xl border border-slate-100">
+            <button 
+              onClick={handlePrevCycle}
+              className="p-3 bg-white text-slate-600 rounded-xl shadow-sm border border-slate-100 hover:bg-brand-50 hover:text-brand-600 transition-all active:scale-95"
+              title="Siklus Sebelumnya"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            
+            <button 
+              onClick={handleResetCycle}
+              className="px-6 py-3 bg-brand-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-200 hover:bg-brand-700 transition-all active:scale-95"
+            >
+              Minggu Ini
+            </button>
+
+            <button 
+              onClick={handleNextCycle}
+              className="p-3 bg-white text-slate-600 rounded-xl shadow-sm border border-slate-100 hover:bg-brand-50 hover:text-brand-600 transition-all active:scale-95"
+              title="Siklus Berikutnya"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="hidden lg:flex items-center gap-3 px-5 py-3 bg-brand-50/50 rounded-2xl border border-brand-100">
+            <div className="w-2 h-2 bg-brand-500 rounded-full animate-pulse"></div>
+            <span className="text-[10px] font-bold text-brand-700 uppercase tracking-widest">
+              Rentang: {format(currentCycleInfo.blockStart, 'dd MMM')} — {format(addDays(currentCycleInfo.blockStart, 20), 'dd MMM yyyy')}
+            </span>
+          </div>
+        </div>
 
         {/* Notifications for Nego Requests */}
         <AnimatePresence>
